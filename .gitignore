@@ -1,0 +1,9 @@
+# Nunca subir llaves privadas, solicitudes ni discos
+*.key
+*.csr
+*.srl
+*.img
+*.keyfile
+*.bak
+*-plano.yaml
+.env
