@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agrosugar
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mosquitto-conf
+  namespace: agrosugar
+data:
+  mosquitto.conf: |
+    listener 1883
+    allow_anonymous true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqtt-broker
+  namespace: agrosugar
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mqtt-broker
+  template:
+    metadata:
+      labels:
+        app: mqtt-broker
+    spec:
+      containers:
+        - name: mosquitto
+          image: eclipse-mosquitto:2
+          ports:
+            - containerPort: 1883
+          volumeMounts:
+            - name: conf
+              mountPath: /mosquitto/config/mosquitto.conf
+              subPath: mosquitto.conf
+      volumes:
+        - name: conf
+          configMap:
+            name: mosquitto-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mqtt-broker
+  namespace: agrosugar
+spec:
+  selector:
+    app: mqtt-broker
+  ports:
+    - port: 1883
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-transaccional
+  namespace: agrosugar
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-transaccional
+  template:
+    metadata:
+      labels:
+        app: db-transaccional
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: db-cred
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-transaccional
+  namespace: agrosugar
+spec:
+  selector:
+    app: db-transaccional
+  ports:
+    - port: 5432
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sensor-hidratacion-01
+  namespace: agrosugar
+  labels:
+    role: sensor-node
+spec:
+  containers:
+    - name: sensor
+      image: nicolaka/netshoot
+      command: ["sleep", "infinity"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: intruso
+  namespace: agrosugar
+  labels:
+    role: desconocido
+spec:
+  containers:
+    - name: intruso
+      image: nicolaka/netshoot
+      command: ["sleep", "infinity"]

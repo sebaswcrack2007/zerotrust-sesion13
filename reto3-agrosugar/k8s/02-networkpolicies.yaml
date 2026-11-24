@@ -1,0 +1,126 @@
+---
+# 2) Todos los Pods pueden consultar el DNS del clúster
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: agrosugar
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# 3) El broker acepta conexiones al 1883 SOLO desde Pods con role: sensor-node
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-mqtt-from-sensors
+  namespace: agrosugar
+spec:
+  podSelector:
+    matchLabels:
+      app: mqtt-broker
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              role: sensor-node
+      ports:
+        - protocol: TCP
+          port: 1883
+---
+# 4) Los sensores solo pueden salir hacia el broker en el 1883
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-sensors-egress-mqtt
+  namespace: agrosugar
+spec:
+  podSelector:
+    matchLabels:
+      role: sensor-node
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: mqtt-broker
+      ports:
+        - protocol: TCP
+          port: 1883
+---
+# 2) Todos los Pods pueden consultar el DNS del clúster
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: agrosugar
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# 3) El broker acepta conexiones al 1883 SOLO desde Pods con role: sensor-node
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-mqtt-from-sensors
+  namespace: agrosugar
+spec:
+  podSelector:
+    matchLabels:
+      app: mqtt-broker
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              role: sensor-node
+      ports:
+        - protocol: TCP
+          port: 1883
+---
+# 4) Los sensores solo pueden salir hacia el broker en el 1883
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-sensors-egress-mqtt
+  namespace: agrosugar
+spec:
+  podSelector:
+    matchLabels:
+      role: sensor-node
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: mqtt-broker
+      ports:
+        - protocol: TCP
+          port: 1883
