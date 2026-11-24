@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pg-uci
+  namespace: hospitvalle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pg-uci
+  template:
+    metadata:
+      labels:
+        app: pg-uci
+    spec:
+      serviceAccountName: uci-db-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: pg-uci-cred
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: datos
+              mountPath: /var/lib/postgresql/data
+            - name: socket
+              mountPath: /var/run/postgresql
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: datos
+          emptyDir: {}
+        - name: socket
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pg-uci
+  namespace: hospitvalle
+spec:
+  selector:
+    app: pg-uci
+  ports:
+    - port: 5432
